@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 
 abstract class AudioPlayerStates extends Equatable{
   AudioPlayerStates([List props = const []]) : super(props);
@@ -20,3 +21,9 @@ class Paused extends AudioPlayerStates{
   String toString() => 'paused';
 }
 
+class UpdateProgress extends AudioPlayerStates{
+  final double progress;
+  UpdateProgress({@required this.progress});
+  @override
+  String toString() => "update progress";
+}

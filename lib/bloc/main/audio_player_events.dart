@@ -57,9 +57,12 @@ class SeekingThumbDragEnd extends AudioPlayerEvents{
   }
 }
 
-class DurationChanged extends AudioPlayerEvents{
+
+class DurationUpdated extends AudioPlayerEvents{
   final int duration;
-  DurationChanged({this.duration});
+
+  DurationUpdated({@required this.duration});
+
   @override
-  String toString() => "duration changed";
+  String toString() => "updated duration";
 }

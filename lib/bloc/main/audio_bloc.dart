@@ -2,27 +2,35 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
-import 'package:music_player/bloc/audio_player_events.dart';
-import 'package:music_player/bloc/audio_player_states.dart';
+import 'package:music_player/bloc/main/audio_player_events.dart';
+import 'package:music_player/bloc/main/audio_player_states.dart';
 import 'package:music_player/songs.dart';
 
-import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 
 class AudioPlayerBloc extends Bloc<AudioPlayerEvents,AudioPlayerStates>{
 
   final AudioPlayer audioPlayer;
   final List<DemoSong> songs;
+
   int currentSongIndex = 0;
+  int currentSongTotalTime = 10;
+
   bool isSongPlaying = false;
-  List<String> localSongs = [];
   AudioPlayerState playerState;
 
+  List<String> localSongs = [];
+
+
   AudioPlayerBloc({@required this.audioPlayer,@required this.songs}){
-    _getMp3Files();
+    _getAudioFiles();
 
     audioPlayer.onDurationChanged.listen((data){
-      this.dispatch(DurationChanged(duration: data.inMilliseconds));
+      currentSongTotalTime = data.inMilliseconds;
+    });
+
+    audioPlayer.onAudioPositionChanged.listen((data){
+      this.dispatch(DurationUpdated(duration: data.inMilliseconds));
     });
 
     audioPlayer.onPlayerStateChanged.listen((data){
@@ -45,11 +53,13 @@ class AudioPlayerBloc extends Bloc<AudioPlayerEvents,AudioPlayerStates>{
       yield* _mapPreviousButtonPressedToState(event);
     }else if(event is NextButtonPressed){
       yield* _mapNextButtonPressedToState(event);
+    }else if(event is DurationUpdated){
+      yield* _mapDurationUpdatedToState(event);
     }
   }
 
   Stream<AudioPlayerStates>
-    _mapPlayButtonPressedToState(PlayButtonPressed e) async*{
+    _mapPlayButtonPressedToState(PlayButtonPressed event) async*{
     if(playerState == AudioPlayerState.PLAYING){
       _pause();
     }else{
@@ -62,6 +72,7 @@ class AudioPlayerBloc extends Bloc<AudioPlayerEvents,AudioPlayerStates>{
     _mapPreviousButtonPressedToState(PreviousButtonPressed event) async*{
     if(currentSongIndex > 0){
       currentSongIndex -= 1;
+      //_play(songs[currentSongIndex].audioUrl);
       _play(localSongs[currentSongIndex]);
     }
     //TODO yield previous song state
@@ -72,10 +83,17 @@ class AudioPlayerBloc extends Bloc<AudioPlayerEvents,AudioPlayerStates>{
     _mapNextButtonPressedToState(NextButtonPressed event) async*{
     if(currentSongIndex < songs.length-1){
       currentSongIndex +=1;
+      //_play(songs[currentSongIndex].audioUrl);
       _play(localSongs[currentSongIndex]);
     }
     //TODO yield next song state
     yield Playing();
+  }
+
+  Stream<AudioPlayerStates>
+    _mapDurationUpdatedToState(DurationUpdated event) async*{
+    double progress = event.duration/(currentSongTotalTime).toDouble();
+    yield UpdateProgress(progress: progress);
   }
 
   _play(String url) async{
@@ -86,34 +104,26 @@ class AudioPlayerBloc extends Bloc<AudioPlayerEvents,AudioPlayerStates>{
     await audioPlayer.pause();
   }
 
-  _getMp3Files() async{
-    try{
-      Map<String,String>_paths = await FilePicker.getMultiFilePath(
-        type: FileType.AUDIO,
-        fileExtension: 'mp3'
-      );
-      _getMp4Files();
+  _getAudioFiles()async{
+    Map<String,String> _mp3 = await FilePicker.getMultiFilePath(
+      fileExtension: 'mp3',
+      type: FileType.AUDIO
+    );
 
-      _paths.forEach((key,value){
-        localSongs.add(value);
-      });
-    }catch(e){
-      print(e);
-    }
+    Map<String,String> _mp4 = await FilePicker.getMultiFilePath(
+      fileExtension: 'mp4',
+      type: FileType.AUDIO
+    );
+
+    _mp3.forEach((key,value){
+      localSongs.add(value);
+      print(value);
+    });
+
+    _mp4.forEach((key,value){
+      localSongs.add(value);
+      print(value);
+    });
   }
 
-  _getMp4Files() async{
-    try{
-      Map<String,String>_paths = await FilePicker.getMultiFilePath(
-          type: FileType.AUDIO,
-          fileExtension: 'mp4'
-      );
-
-      _paths.forEach((key,value){
-        localSongs.add(value);
-      });
-    }catch(e){
-      print(e);
-    }
-  }
 }

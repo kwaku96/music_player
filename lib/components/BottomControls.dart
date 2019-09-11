@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:music_player/bloc/a_bloc.dart';
+import 'package:music_player/bloc/main/a_bloc.dart';
 
 import 'PlayPauseButton.dart';
 import '../theme.dart';
